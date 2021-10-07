@@ -37,6 +37,7 @@ import (
 	grpcgw "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/heroiclabs/nakama-common/api"
 	"github.com/heroiclabs/nakama/v3/apigrpc"
+	"github.com/heroiclabs/nakama/v3/protojsonaes"
 	"github.com/heroiclabs/nakama/v3/social"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -79,7 +80,7 @@ type ApiServer struct {
 	grpcGatewayServer    *http.Server
 }
 
-func StartApiServer(logger *zap.Logger, startupLogger *zap.Logger, db *sql.DB, protojsonMarshaler *protojson.MarshalOptions, protojsonUnmarshaler *protojson.UnmarshalOptions, config Config, socialClient *social.Client, leaderboardCache LeaderboardCache, leaderboardRankCache LeaderboardRankCache, sessionRegistry SessionRegistry, sessionCache SessionCache, statusRegistry *StatusRegistry, matchRegistry MatchRegistry, matchmaker Matchmaker, tracker Tracker, router MessageRouter, metrics *Metrics, pipeline *Pipeline, runtime *Runtime) *ApiServer {
+func StartApiServer(logger *zap.Logger, startupLogger *zap.Logger, db *sql.DB, protojsonMarshaler *protojsonaes.MarshalOptions, protojsonUnmarshaler *protojsonaes.UnmarshalOptions, config Config, socialClient *social.Client, leaderboardCache LeaderboardCache, leaderboardRankCache LeaderboardRankCache, sessionRegistry SessionRegistry, sessionCache SessionCache, statusRegistry *StatusRegistry, matchRegistry MatchRegistry, matchmaker Matchmaker, tracker Tracker, router MessageRouter, metrics *Metrics, pipeline *Pipeline, runtime *Runtime) *ApiServer {
 	var gatewayContextTimeoutMs string
 	if config.GetSocket().IdleTimeoutMs > 500 {
 		// Ensure the GRPC Gateway timeout is just under the idle timeout (if possible) to ensure it has priority.
@@ -158,13 +159,21 @@ func StartApiServer(logger *zap.Logger, startupLogger *zap.Logger, db *sql.DB, p
 			return metadata.MD(p)
 		}),
 		grpcgw.WithMarshalerOption(grpcgw.MIMEWildcard, &grpcgw.HTTPBodyMarshaler{
-			Marshaler: &grpcgw.JSONPb{
-				MarshalOptions: protojson.MarshalOptions{
-					UseProtoNames:  true,
-					UseEnumNumbers: true,
+			Marshaler: &protojsonaes.JSONPbAES{
+				UseAESEncryption: config.GetSession().UseAESMessageEncryption,
+				AESEncryptionKey: []byte(config.GetSession().AESMessageEncryptionKey),
+				MarshalOptions: protojsonaes.MarshalOptions{
+					UseAESEncryption: false,
+					MarshalOptions: &protojson.MarshalOptions{
+						UseProtoNames:  true,
+						UseEnumNumbers: true,
+					},
 				},
-				UnmarshalOptions: protojson.UnmarshalOptions{
-					DiscardUnknown: true,
+				UnmarshalOptions: protojsonaes.UnmarshalOptions{
+					UseAESEncryption: false,
+					UnmarshalOptions: &protojson.UnmarshalOptions{
+						DiscardUnknown: true,
+					},
 				},
 			},
 		}),

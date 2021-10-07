@@ -28,11 +28,11 @@ import (
 	"github.com/heroiclabs/nakama-common/api"
 	"github.com/heroiclabs/nakama-common/rtapi"
 	"github.com/heroiclabs/nakama-common/runtime"
+	"github.com/heroiclabs/nakama/v3/protojsonaes"
 	"github.com/heroiclabs/nakama/v3/social"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var (
@@ -564,7 +564,7 @@ func CheckRuntime(logger *zap.Logger, config Config) error {
 	return nil
 }
 
-func NewRuntime(ctx context.Context, logger, startupLogger *zap.Logger, db *sql.DB, protojsonMarshaler *protojson.MarshalOptions, protojsonUnmarshaler *protojson.UnmarshalOptions, config Config, socialClient *social.Client, leaderboardCache LeaderboardCache, leaderboardRankCache LeaderboardRankCache, leaderboardScheduler LeaderboardScheduler, sessionRegistry SessionRegistry, sessionCache SessionCache, matchRegistry MatchRegistry, tracker Tracker, metrics *Metrics, streamManager StreamManager, router MessageRouter) (*Runtime, *RuntimeInfo, error) {
+func NewRuntime(ctx context.Context, logger, startupLogger *zap.Logger, db *sql.DB, protojsonMarshaler *protojsonaes.MarshalOptions, protojsonUnmarshaler *protojsonaes.UnmarshalOptions, config Config, socialClient *social.Client, leaderboardCache LeaderboardCache, leaderboardRankCache LeaderboardRankCache, leaderboardScheduler LeaderboardScheduler, sessionRegistry SessionRegistry, sessionCache SessionCache, matchRegistry MatchRegistry, tracker Tracker, metrics *Metrics, streamManager StreamManager, router MessageRouter) (*Runtime, *RuntimeInfo, error) {
 	runtimeConfig := config.GetRuntime()
 	startupLogger.Info("Initialising runtime", zap.String("path", runtimeConfig.Path))
 

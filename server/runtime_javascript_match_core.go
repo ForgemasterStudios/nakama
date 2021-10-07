@@ -24,10 +24,10 @@ import (
 	"github.com/dop251/goja"
 	"github.com/gofrs/uuid"
 	"github.com/heroiclabs/nakama-common/rtapi"
+	"github.com/heroiclabs/nakama/v3/protojsonaes"
 	"github.com/heroiclabs/nakama/v3/social"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var matchStoppedError = errors.New("match stopped")
@@ -66,7 +66,7 @@ type RuntimeJavaScriptMatchCore struct {
 	// ctxCancelFn context.CancelFunc
 }
 
-func NewRuntimeJavascriptMatchCore(logger *zap.Logger, module string, db *sql.DB, protojsonMarshaler *protojson.MarshalOptions, protojsonUnmarshaler *protojson.UnmarshalOptions, config Config, socialClient *social.Client, leaderboardCache LeaderboardCache, rankCache LeaderboardRankCache, localCache *RuntimeJavascriptLocalCache, leaderboardScheduler LeaderboardScheduler, sessionRegistry SessionRegistry, sessionCache SessionCache, matchRegistry MatchRegistry, tracker Tracker, streamManager StreamManager, router MessageRouter, matchCreateFn RuntimeMatchCreateFunction, eventFn RuntimeEventCustomFunction, id uuid.UUID, node string, stopped *atomic.Bool, matchHandlers *jsMatchHandlers, modCache *RuntimeJSModuleCache) (RuntimeMatchCore, error) {
+func NewRuntimeJavascriptMatchCore(logger *zap.Logger, module string, db *sql.DB, protojsonMarshaler *protojsonaes.MarshalOptions, protojsonUnmarshaler *protojsonaes.UnmarshalOptions, config Config, socialClient *social.Client, leaderboardCache LeaderboardCache, rankCache LeaderboardRankCache, localCache *RuntimeJavascriptLocalCache, leaderboardScheduler LeaderboardScheduler, sessionRegistry SessionRegistry, sessionCache SessionCache, matchRegistry MatchRegistry, tracker Tracker, streamManager StreamManager, router MessageRouter, matchCreateFn RuntimeMatchCreateFunction, eventFn RuntimeEventCustomFunction, id uuid.UUID, node string, stopped *atomic.Bool, matchHandlers *jsMatchHandlers, modCache *RuntimeJSModuleCache) (RuntimeMatchCore, error) {
 	runtime := goja.New()
 
 	jsLoggerInst, err := NewJsLogger(runtime, logger)

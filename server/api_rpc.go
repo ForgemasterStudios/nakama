@@ -26,6 +26,7 @@ import (
 	"github.com/gorilla/mux"
 	grpcgw "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/heroiclabs/nakama-common/api"
+	"github.com/heroiclabs/nakama/v3/protojsonaes"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -41,6 +42,7 @@ var (
 	internalServerErrorBytes = []byte(`{"error":"Internal Server Error","message":"Internal Server Error","code":13}`)
 	badJSONBytes             = []byte(`{"error":"json: cannot unmarshal object into Go value of type string","message":"json: cannot unmarshal object into Go value of type string","code":3}`)
 	requestBodyTooLargeBytes = []byte(`{"code":3, "message":"http: request body too large"}`)
+	badEncryptedBytes        = []byte(`{"error":"Unable to decrypt body","message":"Unable to decrypt body","code":16}`)
 )
 
 func (s *ApiServer) RpcFuncHttp(w http.ResponseWriter, r *http.Request) {
@@ -51,14 +53,32 @@ func (s *ApiServer) RpcFuncHttp(w http.ResponseWriter, r *http.Request) {
 	var username string
 	var vars map[string]string
 	var expiry int64
+
+	// Set encryption params
+	useEncryption := s.config.GetSession().UseAESMessageEncryption
+	var encryptionKey []byte
+	if useEncryption {
+		encryptionKey = []byte(s.config.GetSession().AESMessageEncryptionKey)
+	}
+
 	if auth := r.Header["Authorization"]; len(auth) >= 1 {
 		var token string
 		userID, username, vars, expiry, token, isTokenAuth = parseBearerAuth([]byte(s.config.GetSession().EncryptionKey), auth[0])
 		if !isTokenAuth || !s.sessionCache.IsValidSession(userID, expiry, token) {
+			b := authTokenInvalidBytes
 			// Auth token not valid or expired.
-			w.Header().Set("content-type", "application/json")
+			if useEncryption {
+				w.Header().Set("content-type", "application/octet-stream")
+				eb, err := protojsonaes.Encrypt(encryptionKey, b)
+				if err != nil {
+					s.logger.Debug("Error encrypting response to client", zap.Error(err))
+				}
+				b = eb
+			} else {
+				w.Header().Set("content-type", "application/json")
+			}
 			w.WriteHeader(http.StatusUnauthorized)
-			_, err := w.Write(authTokenInvalidBytes)
+			_, err := w.Write(b)
 			if err != nil {
 				s.logger.Debug("Error writing response to client", zap.Error(err))
 			}
@@ -66,20 +86,40 @@ func (s *ApiServer) RpcFuncHttp(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if httpKey := queryParams.Get("http_key"); httpKey != "" {
 		if httpKey != s.config.GetRuntime().HTTPKey {
+			b := httpKeyInvalidBytes
 			// HTTP key did not match.
-			w.Header().Set("content-type", "application/json")
+			if useEncryption {
+				w.Header().Set("content-type", "application/octet-stream")
+				eb, err := protojsonaes.Encrypt(encryptionKey, b)
+				if err != nil {
+					s.logger.Debug("Error encrypting response to client", zap.Error(err))
+				}
+				b = eb
+			} else {
+				w.Header().Set("content-type", "application/json")
+			}
 			w.WriteHeader(http.StatusUnauthorized)
-			_, err := w.Write(httpKeyInvalidBytes)
+			_, err := w.Write(b)
 			if err != nil {
 				s.logger.Debug("Error writing response to client", zap.Error(err))
 			}
 			return
 		}
 	} else {
+		b := noAuthBytes
 		// No authentication present.
-		w.Header().Set("content-type", "application/json")
+		if useEncryption {
+			w.Header().Set("content-type", "application/octet-stream")
+			eb, err := protojsonaes.Encrypt(encryptionKey, b)
+			if err != nil {
+				s.logger.Debug("Error encrypting response to client", zap.Error(err))
+			}
+			b = eb
+		} else {
+			w.Header().Set("content-type", "application/json")
+		}
 		w.WriteHeader(http.StatusUnauthorized)
-		_, err := w.Write(noAuthBytes)
+		_, err := w.Write(b)
 		if err != nil {
 			s.logger.Debug("Error writing response to client", zap.Error(err))
 		}
@@ -98,10 +138,20 @@ func (s *ApiServer) RpcFuncHttp(w http.ResponseWriter, r *http.Request) {
 	// Check the RPC function ID.
 	maybeID, ok := mux.Vars(r)["id"]
 	if !ok || maybeID == "" {
+		b := rpcIDMustBeSetBytes
 		// Missing RPC function ID.
-		w.Header().Set("content-type", "application/json")
+		if useEncryption {
+			w.Header().Set("content-type", "application/octet-stream")
+			eb, err := protojsonaes.Encrypt(encryptionKey, b)
+			if err != nil {
+				s.logger.Debug("Error encrypting response to client", zap.Error(err))
+			}
+			b = eb
+		} else {
+			w.Header().Set("content-type", "application/json")
+		}
 		w.WriteHeader(http.StatusBadRequest)
-		sentBytes, err = w.Write(rpcIDMustBeSetBytes)
+		sentBytes, err = w.Write(b)
 		if err != nil {
 			s.logger.Debug("Error writing response to client", zap.Error(err))
 		}
@@ -112,10 +162,20 @@ func (s *ApiServer) RpcFuncHttp(w http.ResponseWriter, r *http.Request) {
 	// Find the correct RPC function.
 	fn := s.runtime.Rpc(id)
 	if fn == nil {
+		b := rpcFunctionNotFoundBytes
 		// No function registered for this ID.
-		w.Header().Set("content-type", "application/json")
+		if useEncryption {
+			w.Header().Set("content-type", "application/octet-stream")
+			eb, err := protojsonaes.Encrypt(encryptionKey, b)
+			if err != nil {
+				s.logger.Debug("Error encrypting response to client", zap.Error(err))
+			}
+			b = eb
+		} else {
+			w.Header().Set("content-type", "application/json")
+		}
 		w.WriteHeader(http.StatusNotFound)
-		sentBytes, err = w.Write(rpcFunctionNotFoundBytes)
+		sentBytes, err = w.Write(b)
 		if err != nil {
 			s.logger.Debug("Error writing response to client", zap.Error(err))
 		}
@@ -134,9 +194,19 @@ func (s *ApiServer) RpcFuncHttp(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			// Request body too large.
 			if err.Error() == "http: request body too large" {
-				w.Header().Set("content-type", "application/json")
+				b := requestBodyTooLargeBytes
+				if useEncryption {
+					w.Header().Set("content-type", "application/octet-stream")
+					eb, err := protojsonaes.Encrypt(encryptionKey, b)
+					if err != nil {
+						s.logger.Debug("Error encrypting response to client", zap.Error(err))
+					}
+					b = eb
+				} else {
+					w.Header().Set("content-type", "application/json")
+				}
 				w.WriteHeader(http.StatusBadRequest)
-				sentBytes, err = w.Write(requestBodyTooLargeBytes)
+				sentBytes, err = w.Write(b)
 				if err != nil {
 					s.logger.Debug("Error writing response to client", zap.Error(err))
 				}
@@ -144,13 +214,57 @@ func (s *ApiServer) RpcFuncHttp(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Other error reading request body.
-			w.Header().Set("content-type", "application/json")
+			b := internalServerErrorBytes
+			if useEncryption {
+				w.Header().Set("content-type", "application/octet-stream")
+				eb, err := protojsonaes.Encrypt(encryptionKey, b)
+				if err != nil {
+					s.logger.Debug("Error encrypting response to client", zap.Error(err))
+				}
+				b = eb
+			} else {
+				w.Header().Set("content-type", "application/json")
+			}
 			w.WriteHeader(http.StatusInternalServerError)
-			sentBytes, err = w.Write(internalServerErrorBytes)
+			sentBytes, err = w.Write(b)
 			if err != nil {
 				s.logger.Debug("Error writing response to client", zap.Error(err))
 			}
 			return
+		}
+
+		if useEncryption {
+			// decode the body to base64
+			decoded, err := protojsonaes.Base64Decode(b)
+			if err != nil {
+				w.Header().Set("content-type", "application/octet-stream")
+				response, err := protojsonaes.Encrypt(encryptionKey, badEncryptedBytes)
+				if err != nil {
+					s.logger.Debug("Error encrypting response to client", zap.Error(err))
+				}
+				w.WriteHeader(http.StatusBadRequest)
+				sentBytes, err = w.Write(response)
+				if err != nil {
+					s.logger.Debug("Error writing response to client", zap.Error(err))
+				}
+				return
+			}
+
+			eb, err := protojsonaes.Decrypt(encryptionKey, decoded)
+			if err != nil {
+				w.Header().Set("content-type", "application/octet-stream")
+				response, err := protojsonaes.Encrypt(encryptionKey, badEncryptedBytes)
+				if err != nil {
+					s.logger.Debug("Error encrypting response to client", zap.Error(err))
+				}
+				w.WriteHeader(http.StatusBadRequest)
+				sentBytes, err = w.Write(response)
+				if err != nil {
+					s.logger.Debug("Error writing response to client", zap.Error(err))
+				}
+				return
+			}
+			b = eb
 		}
 		recvBytes = len(b)
 
@@ -158,9 +272,19 @@ func (s *ApiServer) RpcFuncHttp(w http.ResponseWriter, r *http.Request) {
 		if !unwrap {
 			err = json.Unmarshal(b, &payload)
 			if err != nil {
-				w.Header().Set("content-type", "application/json")
+				b := badJSONBytes
+				if useEncryption {
+					w.Header().Set("content-type", "application/octet-stream")
+					eb, err := protojsonaes.Encrypt(encryptionKey, b)
+					if err != nil {
+						s.logger.Debug("Error encrypting response to client", zap.Error(err))
+					}
+					b = eb
+				} else {
+					w.Header().Set("content-type", "application/json")
+				}
 				w.WriteHeader(http.StatusBadRequest)
-				sentBytes, err = w.Write(badJSONBytes)
+				sentBytes, err = w.Write(b)
 				if err != nil {
 					s.logger.Debug("Error writing response to client", zap.Error(err))
 				}
@@ -184,7 +308,16 @@ func (s *ApiServer) RpcFuncHttp(w http.ResponseWriter, r *http.Request) {
 	result, fnErr, code := fn(r.Context(), queryParams, uid, username, vars, expiry, "", clientIP, clientPort, "", payload)
 	if fnErr != nil {
 		response, _ := json.Marshal(map[string]interface{}{"error": fnErr, "message": fnErr.Error(), "code": code})
-		w.Header().Set("content-type", "application/json")
+		if useEncryption {
+			w.Header().Set("content-type", "application/octet-stream")
+			eb, err := protojsonaes.Encrypt(encryptionKey, response)
+			if err != nil {
+				s.logger.Debug("Error encrypting response to client", zap.Error(err))
+			}
+			response = eb
+		} else {
+			w.Header().Set("content-type", "application/json")
+		}
 		w.WriteHeader(grpcgw.HTTPStatusFromCode(code))
 		sentBytes, err = w.Write(response)
 		if err != nil {
@@ -202,9 +335,19 @@ func (s *ApiServer) RpcFuncHttp(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			// Failed to encode the wrapped response.
 			s.logger.Error("Error marshaling wrapped response to client", zap.Error(err))
-			w.Header().Set("content-type", "application/json")
+			b := internalServerErrorBytes
+			if useEncryption {
+				w.Header().Set("content-type", "application/octet-stream")
+				eb, err := protojsonaes.Encrypt(encryptionKey, b)
+				if err != nil {
+					s.logger.Debug("Error encrypting response to client", zap.Error(err))
+				}
+				b = eb
+			} else {
+				w.Header().Set("content-type", "application/json")
+			}
 			w.WriteHeader(http.StatusInternalServerError)
-			sentBytes, err = w.Write(internalServerErrorBytes)
+			sentBytes, err = w.Write(b)
 			if err != nil {
 				s.logger.Debug("Error writing response to client", zap.Error(err))
 			}
@@ -217,15 +360,37 @@ func (s *ApiServer) RpcFuncHttp(w http.ResponseWriter, r *http.Request) {
 	if unwrap {
 		if contentType := r.Header["Content-Type"]; len(contentType) > 0 {
 			// Assume the request input content type is the same as the expected response.
-			w.Header().Set("content-type", contentType[0])
+			if useEncryption {
+				w.Header().Set("content-type", "application/octet-stream")
+			} else {
+				w.Header().Set("content-type", contentType[0])
+			}
 		} else {
 			// Don't know payload content-type.
-			w.Header().Set("content-type", "text/plain")
+			if useEncryption {
+				w.Header().Set("content-type", "application/octet-stream")
+			} else {
+				w.Header().Set("content-type", "text/plain")
+			}
 		}
 	} else {
-		// Fall back to default response content type application/json.
-		w.Header().Set("content-type", "application/json")
+		// Fall back to default response content type.
+		if useEncryption {
+			w.Header().Set("content-type", "application/octet-stream")
+		} else {
+			w.Header().Set("content-type", "application/json")
+		}
 	}
+
+	// Encrypt response if its wanted
+	if useEncryption {
+		eb, err := protojsonaes.Encrypt(encryptionKey, response)
+		if err != nil {
+			s.logger.Debug("Error encrypting response to client", zap.Error(err))
+		}
+		response = eb
+	}
+
 	w.WriteHeader(http.StatusOK)
 	sentBytes, err = w.Write(response)
 	if err != nil {

@@ -19,7 +19,6 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"google.golang.org/protobuf/encoding/protojson"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -30,12 +29,15 @@ import (
 	"syscall"
 	"time"
 
+	"google.golang.org/protobuf/encoding/protojson"
+
 	"io/ioutil"
 	"path/filepath"
 
 	"github.com/gofrs/uuid"
 	"github.com/heroiclabs/nakama/v3/ga"
 	"github.com/heroiclabs/nakama/v3/migrate"
+	"github.com/heroiclabs/nakama/v3/protojsonaes"
 	"github.com/heroiclabs/nakama/v3/server"
 	"github.com/heroiclabs/nakama/v3/social"
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -50,14 +52,18 @@ var (
 	commitID string = "dev"
 
 	// Shared utility components.
-	jsonpbMarshaler = &protojson.MarshalOptions{
-		UseEnumNumbers:  true,
-		EmitUnpopulated: false,
-		Indent:          "",
-		UseProtoNames:   true,
+	jsonpbMarshaler = &protojsonaes.MarshalOptions{
+		MarshalOptions: &protojson.MarshalOptions{
+			UseEnumNumbers:  true,
+			EmitUnpopulated: false,
+			Indent:          "",
+			UseProtoNames:   true,
+		},
 	}
-	jsonpbUnmarshaler = &protojson.UnmarshalOptions{
-		DiscardUnknown: false,
+	jsonpbUnmarshaler = &protojsonaes.UnmarshalOptions{
+		UnmarshalOptions: &protojson.UnmarshalOptions{
+			DiscardUnknown: false,
+		},
 	}
 )
 
@@ -100,6 +106,12 @@ func main() {
 	config := server.ParseArgs(tmpLogger, os.Args)
 	logger, startupLogger := server.SetupLogging(tmpLogger, config)
 	configWarnings := server.CheckConfig(logger, config)
+
+	// Initialize missing pb marshaller fields based on config
+	jsonpbMarshaler.UseAESEncryption = config.GetSession().UseAESMessageEncryption
+	jsonpbMarshaler.AESEncryptionKey = []byte(config.GetSession().AESMessageEncryptionKey)
+	jsonpbUnmarshaler.UseAESEncryption = config.GetSession().UseAESMessageEncryption
+	jsonpbUnmarshaler.AESEncryptionKey = []byte(config.GetSession().AESMessageEncryptionKey)
 
 	startupLogger.Info("Nakama starting")
 	startupLogger.Info("Node", zap.String("name", config.GetName()), zap.String("version", semver), zap.String("runtime", runtime.Version()), zap.Int("cpu", runtime.NumCPU()), zap.Int("proc", runtime.GOMAXPROCS(0)))

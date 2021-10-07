@@ -33,9 +33,9 @@ import (
 	"github.com/heroiclabs/nakama-common/rtapi"
 	"github.com/heroiclabs/nakama-common/runtime"
 	"github.com/heroiclabs/nakama/v3/internal/cronexpr"
+	"github.com/heroiclabs/nakama/v3/protojsonaes"
 	"github.com/heroiclabs/nakama/v3/social"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -44,7 +44,7 @@ type RuntimeGoNakamaModule struct {
 	sync.RWMutex
 	logger               *zap.Logger
 	db                   *sql.DB
-	protojsonMarshaler   *protojson.MarshalOptions
+	protojsonMarshaler   *protojsonaes.MarshalOptions
 	config               Config
 	socialClient         *social.Client
 	leaderboardCache     LeaderboardCache
@@ -65,7 +65,7 @@ type RuntimeGoNakamaModule struct {
 	matchCreateFn RuntimeMatchCreateFunction
 }
 
-func NewRuntimeGoNakamaModule(logger *zap.Logger, db *sql.DB, protojsonMarshaler *protojson.MarshalOptions, config Config, socialClient *social.Client, leaderboardCache LeaderboardCache, leaderboardRankCache LeaderboardRankCache, leaderboardScheduler LeaderboardScheduler, sessionRegistry SessionRegistry, sessionCache SessionCache, matchRegistry MatchRegistry, tracker Tracker, metrics *Metrics, streamManager StreamManager, router MessageRouter) *RuntimeGoNakamaModule {
+func NewRuntimeGoNakamaModule(logger *zap.Logger, db *sql.DB, protojsonMarshaler *protojsonaes.MarshalOptions, config Config, socialClient *social.Client, leaderboardCache LeaderboardCache, leaderboardRankCache LeaderboardRankCache, leaderboardScheduler LeaderboardScheduler, sessionRegistry SessionRegistry, sessionCache SessionCache, matchRegistry MatchRegistry, tracker Tracker, metrics *Metrics, streamManager StreamManager, router MessageRouter) *RuntimeGoNakamaModule {
 	return &RuntimeGoNakamaModule{
 		logger:               logger,
 		db:                   db,

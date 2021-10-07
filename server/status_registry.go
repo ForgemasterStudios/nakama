@@ -20,8 +20,8 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/heroiclabs/nakama-common/rtapi"
+	"github.com/heroiclabs/nakama/v3/protojsonaes"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -35,7 +35,7 @@ type StatusRegistry struct {
 	sync.RWMutex
 	logger             *zap.Logger
 	sessionRegistry    SessionRegistry
-	protojsonMarshaler *protojson.MarshalOptions
+	protojsonMarshaler *protojsonaes.MarshalOptions
 
 	ctx         context.Context
 	ctxCancelFn context.CancelFunc
@@ -45,7 +45,7 @@ type StatusRegistry struct {
 	byUser    map[uuid.UUID]map[uuid.UUID]struct{}
 }
 
-func NewStatusRegistry(logger *zap.Logger, config Config, sessionRegistry SessionRegistry, protojsonMarshaler *protojson.MarshalOptions) *StatusRegistry {
+func NewStatusRegistry(logger *zap.Logger, config Config, sessionRegistry SessionRegistry, protojsonMarshaler *protojsonaes.MarshalOptions) *StatusRegistry {
 	ctx, ctxCancelFn := context.WithCancel(context.Background())
 
 	s := &StatusRegistry{

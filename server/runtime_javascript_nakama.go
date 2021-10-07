@@ -47,10 +47,10 @@ import (
 	"github.com/heroiclabs/nakama-common/rtapi"
 	"github.com/heroiclabs/nakama-common/runtime"
 	"github.com/heroiclabs/nakama/v3/internal/cronexpr"
+	"github.com/heroiclabs/nakama/v3/protojsonaes"
 	"github.com/heroiclabs/nakama/v3/social"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -59,8 +59,8 @@ type runtimeJavascriptNakamaModule struct {
 	logger               *zap.Logger
 	config               Config
 	db                   *sql.DB
-	protojsonMarshaler   *protojson.MarshalOptions
-	protojsonUnmarshaler *protojson.UnmarshalOptions
+	protojsonMarshaler   *protojsonaes.MarshalOptions
+	protojsonUnmarshaler *protojsonaes.UnmarshalOptions
 	httpClient           *http.Client
 	socialClient         *social.Client
 	leaderboardCache     LeaderboardCache
@@ -79,7 +79,7 @@ type runtimeJavascriptNakamaModule struct {
 	eventFn       RuntimeEventCustomFunction
 }
 
-func NewRuntimeJavascriptNakamaModule(logger *zap.Logger, db *sql.DB, protojsonMarshaler *protojson.MarshalOptions, protojsonUnmarshaler *protojson.UnmarshalOptions, config Config, socialClient *social.Client, leaderboardCache LeaderboardCache, rankCache LeaderboardRankCache, localCache *RuntimeJavascriptLocalCache, leaderboardScheduler LeaderboardScheduler, sessionRegistry SessionRegistry, sessionCache SessionCache, matchRegistry MatchRegistry, tracker Tracker, streamManager StreamManager, router MessageRouter, eventFn RuntimeEventCustomFunction, matchCreateFn RuntimeMatchCreateFunction) *runtimeJavascriptNakamaModule {
+func NewRuntimeJavascriptNakamaModule(logger *zap.Logger, db *sql.DB, protojsonMarshaler *protojsonaes.MarshalOptions, protojsonUnmarshaler *protojsonaes.UnmarshalOptions, config Config, socialClient *social.Client, leaderboardCache LeaderboardCache, rankCache LeaderboardRankCache, localCache *RuntimeJavascriptLocalCache, leaderboardScheduler LeaderboardScheduler, sessionRegistry SessionRegistry, sessionCache SessionCache, matchRegistry MatchRegistry, tracker Tracker, streamManager StreamManager, router MessageRouter, eventFn RuntimeEventCustomFunction, matchCreateFn RuntimeMatchCreateFunction) *runtimeJavascriptNakamaModule {
 	return &runtimeJavascriptNakamaModule{
 		logger:               logger,
 		config:               config,

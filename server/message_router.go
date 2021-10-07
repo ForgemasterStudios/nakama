@@ -16,8 +16,8 @@ package server
 
 import (
 	"github.com/heroiclabs/nakama-common/rtapi"
+	"github.com/heroiclabs/nakama/v3/protojsonaes"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -37,12 +37,12 @@ type MessageRouter interface {
 }
 
 type LocalMessageRouter struct {
-	protojsonMarshaler *protojson.MarshalOptions
+	protojsonMarshaler *protojsonaes.MarshalOptions
 	sessionRegistry    SessionRegistry
 	tracker            Tracker
 }
 
-func NewLocalMessageRouter(sessionRegistry SessionRegistry, tracker Tracker, protojsonMarshaler *protojson.MarshalOptions) MessageRouter {
+func NewLocalMessageRouter(sessionRegistry SessionRegistry, tracker Tracker, protojsonMarshaler *protojsonaes.MarshalOptions) MessageRouter {
 	return &LocalMessageRouter{
 		protojsonMarshaler: protojsonMarshaler,
 		sessionRegistry:    sessionRegistry,
