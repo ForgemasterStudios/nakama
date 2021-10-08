@@ -234,23 +234,7 @@ func (s *ApiServer) RpcFuncHttp(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if useEncryption {
-			// decode the body to base64
-			decoded, err := protojsonaes.Base64Decode(b)
-			if err != nil {
-				w.Header().Set("content-type", "application/octet-stream")
-				response, err := protojsonaes.Encrypt(encryptionKey, badEncryptedBytes)
-				if err != nil {
-					s.logger.Debug("Error encrypting response to client", zap.Error(err))
-				}
-				w.WriteHeader(http.StatusBadRequest)
-				sentBytes, err = w.Write(response)
-				if err != nil {
-					s.logger.Debug("Error writing response to client", zap.Error(err))
-				}
-				return
-			}
-
-			eb, err := protojsonaes.Decrypt(encryptionKey, decoded)
+			eb, err := protojsonaes.Decrypt(encryptionKey, b)
 			if err != nil {
 				w.Header().Set("content-type", "application/octet-stream")
 				response, err := protojsonaes.Encrypt(encryptionKey, badEncryptedBytes)

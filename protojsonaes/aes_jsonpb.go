@@ -2,7 +2,6 @@ package protojsonaes
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -213,12 +212,7 @@ func (d DecoderWrapper) Decode(v interface{}) error {
 		if err != nil {
 			return err
 		}
-		// Decode recevied bytes from b64
-		b, err := Base64Decode(buffer.Bytes())
-		if err != nil {
-			return err
-		}
-		de, err := Decrypt(d.AESEncryptionKey, b)
+		de, err := Decrypt(d.AESEncryptionKey, buffer.Bytes())
 		if err != nil {
 			return err
 		}
@@ -232,15 +226,15 @@ func (d DecoderWrapper) Decode(v interface{}) error {
 	return decodeJSONPb(j, d.UnmarshalOptions, v)
 }
 
-func Base64Decode(message []byte) (b []byte, err error) {
-	var l int
-	b = make([]byte, base64.StdEncoding.DecodedLen(len(message)))
-	l, err = base64.StdEncoding.Decode(b, message)
-	if err != nil {
-		return
-	}
-	return b[:l], nil
-}
+// func Base64Decode(message []byte) (b []byte, err error) {
+// 	var l int
+// 	b = make([]byte, base64.StdEncoding.DecodedLen(len(message)))
+// 	l, err = base64.StdEncoding.Decode(b, message)
+// 	if err != nil {
+// 		return
+// 	}
+// 	return b[:l], nil
+// }
 
 func unmarshalJSONPb(data []byte, unmarshaler UnmarshalOptions, v interface{}) error {
 	d := json.NewDecoder(bytes.NewReader(data))
