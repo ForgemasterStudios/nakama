@@ -1112,7 +1112,7 @@ func sendFriendAddedNotification(ctx context.Context, logger *zap.Logger, db *sq
 			Content:    string(content),
 			SenderId:   userID.String(),
 			Code:       NotificationCodeFriendJoinGame,
-			Persistent: true,
+			Persistent: false,
 			CreateTime: &timestamppb.Timestamp{Seconds: createTime},
 		}}
 	}

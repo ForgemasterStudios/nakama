@@ -22,10 +22,11 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"github.com/heroiclabs/nakama-common/rtapi"
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"github.com/heroiclabs/nakama-common/rtapi"
 
 	"github.com/gofrs/uuid"
 	"github.com/heroiclabs/nakama-common/api"
