@@ -206,7 +206,7 @@ type (
 
 	RuntimeLeaderboardResetFunction func(ctx context.Context, leaderboard *api.Leaderboard, reset int64) error
 
-	RuntimeEventFunction func(ctx context.Context, logger runtime.Logger, evt *api.Event)
+	RuntimeEventFunction func(ctx context.Context, logger runtime.Logger, nk runtime.NakamaModule, evt *api.Event)
 
 	RuntimeEventCustomFunction       func(ctx context.Context, evt *api.Event)
 	RuntimeEventSessionStartFunction func(userID, username string, vars map[string]string, expiry int64, sessionID, clientIP, clientPort, lang string, evtTimeSec int64)

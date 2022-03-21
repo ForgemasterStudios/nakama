@@ -62,17 +62,17 @@ type RuntimeGoInitializer struct {
 	matchLock *sync.RWMutex
 }
 
-func (ri *RuntimeGoInitializer) RegisterEvent(fn func(ctx context.Context, logger runtime.Logger, evt *api.Event)) error {
+func (ri *RuntimeGoInitializer) RegisterEvent(fn func(ctx context.Context, logger runtime.Logger, nk runtime.NakamaModule, evt *api.Event)) error {
 	ri.eventFunctions = append(ri.eventFunctions, fn)
 	return nil
 }
 
-func (ri *RuntimeGoInitializer) RegisterEventSessionStart(fn func(ctx context.Context, logger runtime.Logger, evt *api.Event)) error {
+func (ri *RuntimeGoInitializer) RegisterEventSessionStart(fn func(ctx context.Context, logger runtime.Logger, nk runtime.NakamaModule, evt *api.Event)) error {
 	ri.sessionStartFunctions = append(ri.sessionStartFunctions, fn)
 	return nil
 }
 
-func (ri *RuntimeGoInitializer) RegisterEventSessionEnd(fn func(ctx context.Context, logger runtime.Logger, evt *api.Event)) error {
+func (ri *RuntimeGoInitializer) RegisterEventSessionEnd(fn func(ctx context.Context, logger runtime.Logger, nk runtime.NakamaModule, evt *api.Event)) error {
 	ri.sessionEndFunctions = append(ri.sessionEndFunctions, fn)
 	return nil
 }
@@ -2424,7 +2424,7 @@ func NewRuntimeProviderGo(ctx context.Context, logger, startupLogger *zap.Logger
 		events.eventFunction = func(ctx context.Context, evt *api.Event) {
 			eventQueue.Queue(func() {
 				for _, fn := range initializer.eventFunctions {
-					fn(ctx, initializer.logger, evt)
+					fn(ctx, initializer.logger, nk, evt)
 				}
 			})
 		}
@@ -2439,7 +2439,7 @@ func NewRuntimeProviderGo(ctx context.Context, logger, startupLogger *zap.Logger
 			}
 			eventQueue.Queue(func() {
 				for _, fn := range initializer.sessionStartFunctions {
-					fn(ctx, initializer.logger, evt)
+					fn(ctx, initializer.logger, nk, evt)
 				}
 			})
 		}
@@ -2454,7 +2454,7 @@ func NewRuntimeProviderGo(ctx context.Context, logger, startupLogger *zap.Logger
 			}
 			eventQueue.Queue(func() {
 				for _, fn := range initializer.sessionEndFunctions {
-					fn(ctx, initializer.logger, evt)
+					fn(ctx, initializer.logger, nk, evt)
 				}
 			})
 		}

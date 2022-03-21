@@ -2,6 +2,8 @@ module github.com/heroiclabs/nakama/v3
 
 go 1.16
 
+replace github.com/heroiclabs/nakama-common v1.16.0 => github.com/ForgemasterStudios/nakama-common v1.16.1
+
 require (
 	github.com/blevesearch/bleve/v2 v2.0.3
 	github.com/blevesearch/upsidedown_store_api v1.0.1
