@@ -2,7 +2,7 @@ module github.com/heroiclabs/nakama/v3
 
 go 1.16
 
-replace github.com/heroiclabs/nakama-common v1.16.0 => github.com/ForgemasterStudios/nakama-common v1.16.1
+replace github.com/heroiclabs/nakama-common v1.16.0 => github.com/ForgemasterStudios/nakama-common v1.16.2
 
 require (
 	github.com/blevesearch/bleve/v2 v2.0.3

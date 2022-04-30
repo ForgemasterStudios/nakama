@@ -233,6 +233,7 @@ func (n *RuntimeLuaNakamaModule) Loader(l *lua.LState) int {
 		"leaderboard_list":                   n.leaderboardList,
 		"leaderboard_records_list":           n.leaderboardRecordsList,
 		"leaderboard_record_write":           n.leaderboardRecordWrite,
+		"leaderboard_records_haystack":       n.leaderboardRecordsHaystack,
 		"leaderboard_record_delete":          n.leaderboardRecordDelete,
 		"leaderboards_get_id":                n.leaderboardsGetId,
 		"purchase_validate_apple":            n.purchaseValidateApple,
@@ -5722,6 +5723,52 @@ func (n *RuntimeLuaNakamaModule) leaderboardRecordWrite(l *lua.LState) int {
 	}
 
 	l.Push(recordTable)
+	return 1
+}
+
+func (n *RuntimeLuaNakamaModule) leaderboardRecordsHaystack(l *lua.LState) int {
+	id := l.CheckString(1)
+	if id == "" {
+		l.ArgError(1, "expects a leaderboard ID string")
+		return 0
+	}
+
+	userID, err := uuid.FromString(l.CheckString(2))
+	if err != nil {
+		l.ArgError(2, "expects user ID to be a valid identifier")
+		return 0
+	}
+
+	limit := l.OptInt(3, 10)
+	if limit < 1 || limit > 100 {
+		l.ArgError(3, "limit must be 1-100")
+		return 0
+	}
+
+	expiry := l.OptInt(4, 0)
+	if expiry < 0 {
+		l.ArgError(4, "expiry should be time since epoch in seconds and has to be a positive integer")
+		return 0
+	}
+
+	records, err := LeaderboardRecordsHaystack(l.Context(), n.logger, n.db, n.leaderboardCache, n.rankCache, id, userID, limit, int64(expiry))
+	if err != nil {
+		l.RaiseError("error listing leaderboard records haystack: %v", err.Error())
+		return 0
+	}
+
+	recordsTable := l.CreateTable(len(records), 0)
+	for i, record := range records {
+		recordTable, err := recordToLuaTable(l, record)
+		if err != nil {
+			l.RaiseError(err.Error())
+			return 0
+		}
+
+		recordsTable.RawSetInt(i+1, recordTable)
+	}
+	l.Push(recordsTable)
+
 	return 1
 }
 
