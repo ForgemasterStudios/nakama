@@ -3,6 +3,24 @@ All notable changes to this project are documented below.
 
 The format is based on [keep a changelog](http://keepachangelog.com) and this project uses [semantic versioning](http://semver.org).
 
+## [3.5.4] - 2022-04-30
+### Added
+- Add "LeaderboardRecordsHaystack" to all runtimes.
+
+## [3.5.3] - 2022-03-21
+### Changed
+- Runtime parameter added to event register functions.
+
+## [3.5.2] - 2022-02-01
+### Changed
+- AddFriends notification persistence removed.
+
+## [3.5.1] - 2021-08-10
+### Added
+- AES e2e encryption added. 
+### Changed
+- All json responses are encrypted with AES by default.
+
 ## [3.5.0] - 2021-08-10
 ### Added
 - Handle thrown JS runtime custom exceptions containing a message and a grpc code to be returned in the server response.
