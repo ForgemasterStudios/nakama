@@ -24,15 +24,20 @@ ENV GOOS linux
 ENV GOARCH amd64
 ENV CGO_ENABLED 1
 
+# Build Delve
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+
 RUN apt-get update && \
     apt-get -y upgrade && \
-    apt-get install -y --no-install-recommends ca-certificates gcc libc6-dev git && \
-    git config --global advice.detachedHead false && \
-    git clone --quiet --no-checkout https://github.com/heroiclabs/nakama /go/build/nakama
+    apt-get install -y --no-install-recommends ca-certificates gcc libc6-dev git
+    # git config --global advice.detachedHead false && \
+    # git clone --quiet --no-checkout https://github.com/heroiclabs/nakama /go/build/nakama
 
+ADD ./ /go/build/nakama
 WORKDIR /go/build/nakama
-RUN git checkout --quiet "$commit" && \
-    go build -o /go/build-out/nakama -trimpath -mod=vendor -gcflags "all=-N -l" -ldflags "-X main.version=$version -X main.commitID=$commit"
+
+# RUN git checkout --quiet "$commit" && \
+RUN go build -o /go/build-out/nakama -trimpath -mod=vendor -gcflags "all=-N -l" -ldflags "-X main.version=$version -X main.commitID=$commit"
 
 FROM debian:buster-slim
 
@@ -52,10 +57,11 @@ RUN mkdir -p /nakama/data/modules && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /nakama/
+COPY --from=builder "/go/bin/dlv" /
 COPY --from=builder "/go/build-out/nakama" /nakama/
-EXPOSE 7349 7350 7351
+EXPOSE 7349 7350 7351 40000
 
-ENTRYPOINT ["tini", "--", "/nakama/nakama"]
+ENTRYPOINT ["/dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/nakama/nakama"]
 
 HEALTHCHECK --interval=5m --timeout=10s \
   CMD curl -f http://localhost:7350/ || exit 1
