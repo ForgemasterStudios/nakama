@@ -5858,50 +5858,6 @@ func (n *RuntimeJavascriptNakamaModule) leaderboardsGetId(r *goja.Runtime) func(
 	}
 }
 
-func (n *runtimeJavascriptNakamaModule) leaderboardRecordsHaystack(r *goja.Runtime) func(goja.FunctionCall) goja.Value {
-	return func(f goja.FunctionCall) goja.Value {
-		id := getJsString(r, f.Argument(0))
-		if id == "" {
-			panic(r.NewTypeError("expects a leaderboard ID string"))
-		}
-
-		ownerID := getJsString(r, f.Argument(1))
-		uid, err := uuid.FromString(ownerID)
-		if err != nil {
-			panic(r.NewTypeError("expects user ID to be a valid identifier"))
-		}
-
-		limit := 10
-		if f.Argument(2) != goja.Undefined() && f.Argument(2) != goja.Null() {
-			limit = int(getJsInt(r, f.Argument(2)))
-			if limit < 1 || limit > 100 {
-				panic(r.NewTypeError("limit must be 1-100"))
-			}
-		}
-
-		overrideExpiry := int64(0)
-		if f.Argument(3) != goja.Undefined() {
-			overrideExpiry = getJsInt(r, f.Argument(3))
-		}
-
-		records, err := LeaderboardRecordsHaystack(context.Background(), n.logger, n.db, n.leaderboardCache, n.rankCache, id, uid, limit, overrideExpiry)
-		if err != nil {
-			panic(r.NewGoError(fmt.Errorf("error listing leaderboard records around owner: %v", err.Error())))
-		}
-
-		recordsSlice := make([]interface{}, 0, len(records))
-		for _, record := range records {
-			recordsSlice = append(recordsSlice, leaderboardRecordToJsMap(r, record))
-		}
-
-		resultMap := make(map[string]interface{}, 1)
-
-		resultMap["records"] = recordsSlice
-
-		return r.ToValue(resultMap)
-	}
-}
-
 // @group leaderboards
 // @summary Fetch the list of leaderboard records around the owner.
 // @param id(type=string) The unique identifier for the leaderboard.

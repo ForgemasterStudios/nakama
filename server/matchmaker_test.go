@@ -27,6 +27,7 @@ import (
 	"github.com/heroiclabs/nakama-common/api"
 	"github.com/heroiclabs/nakama-common/rtapi"
 	"github.com/heroiclabs/nakama-common/runtime"
+	"github.com/heroiclabs/nakama/v3/protojsonaes"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
@@ -1641,14 +1642,21 @@ func createTestMatchmaker(t fatalable, logger *zap.Logger, tickerActive bool, me
 	tracker := &testTracker{}
 	metrics := &testMetrics{}
 
-	jsonpbMarshaler := &protojson.MarshalOptions{
-		UseEnumNumbers:  true,
-		EmitUnpopulated: false,
-		Indent:          "",
-		UseProtoNames:   true,
+	protojsonMarshaler = &protojsonaes.MarshalOptions{
+		UseAESEncryption: cfg.Session.UseAESMessageEncryption,
+		AESEncryptionKey: []byte(cfg.Session.AESMessageEncryptionKey),
+		MarshalOptions: &protojson.MarshalOptions{
+			UseProtoNames:   true,
+			UseEnumNumbers:  true,
+			EmitUnpopulated: false,
+		},
 	}
-	jsonpbUnmarshaler := &protojson.UnmarshalOptions{
-		DiscardUnknown: false,
+	protojsonUnmarshaler = &protojsonaes.UnmarshalOptions{
+		UseAESEncryption: cfg.Session.UseAESMessageEncryption,
+		AESEncryptionKey: []byte(cfg.Session.AESMessageEncryptionKey),
+		UnmarshalOptions: &protojson.UnmarshalOptions{
+			DiscardUnknown: false,
+		},
 	}
 
 	matchRegistry, runtimeMatchCreateFunc, err := createTestMatchRegistry(t, logger)
@@ -1656,7 +1664,7 @@ func createTestMatchmaker(t fatalable, logger *zap.Logger, tickerActive bool, me
 		t.Fatalf("error creating test match registry: %v", err)
 	}
 
-	runtime, _, err := NewRuntime(context.Background(), logger, logger, nil, jsonpbMarshaler, jsonpbUnmarshaler, cfg, "", nil, nil, nil, nil, sessionRegistry, nil, nil, nil, tracker, metrics, nil, messageRouter, storageIdx, nil)
+	runtime, _, err := NewRuntime(context.Background(), logger, logger, nil, protojsonMarshaler, protojsonUnmarshaler, cfg, "", nil, nil, nil, nil, sessionRegistry, nil, nil, nil, tracker, metrics, nil, messageRouter, storageIdx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

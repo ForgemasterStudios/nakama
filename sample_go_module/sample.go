@@ -173,14 +173,6 @@ func (m *Match) MatchSignal(ctx context.Context, logger runtime.Logger, db *sql.
 	return state, "signal received: " + data
 }
 
-func (m *Match) MatchSignal(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, dispatcher runtime.MatchDispatcher, tick int64, state interface{}, data string) (interface{}, string) {
-	if state.(*MatchState).debug {
-		logger.Info("match signal match_id %v tick %v", ctx.Value(runtime.RUNTIME_CTX_MATCH_ID), tick)
-		logger.Info("match signal match_id %v data %v", ctx.Value(runtime.RUNTIME_CTX_MATCH_ID), data)
-	}
-	return state, "signal received: " + data
-}
-
 func eventSessionStart(ctx context.Context, logger runtime.Logger, nk runtime.NakamaModule, evt *api.Event) {
 	logger.Info("session start %v %v", ctx, evt)
 }

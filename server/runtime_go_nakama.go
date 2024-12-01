@@ -2738,27 +2738,6 @@ func (n *RuntimeGoNakamaModule) LeaderboardRecordDelete(ctx context.Context, id,
 	return LeaderboardRecordDelete(ctx, n.logger, n.db, n.leaderboardCache, n.leaderboardRankCache, uuid.Nil, id, ownerID)
 }
 
-func (n *RuntimeGoNakamaModule) LeaderboardRecordsHaystack(ctx context.Context, id, ownerID string, limit int, expiry int64) ([]*api.LeaderboardRecord, error) {
-	if id == "" {
-		return nil, errors.New("expects a leaderboard ID string")
-	}
-
-	owner, err := uuid.FromString(ownerID)
-	if err != nil {
-		return nil, errors.New("expects owner ID to be a valid identifier")
-	}
-
-	if limit < 1 || limit > 100 {
-		return nil, errors.New("limit must be 1-100")
-	}
-
-	if expiry < 0 {
-		return nil, errors.New("expiry should be time since epoch in seconds and has to be a positive integer")
-	}
-
-	return LeaderboardRecordsHaystack(ctx, n.logger, n.db, n.leaderboardCache, n.leaderboardRankCache, id, owner, limit, expiry)
-}
-
 // @group leaderboards
 // @summary Fetch the list of leaderboard records around the owner.
 // @param ctx(type=context.Context) The context object represents information about the server and requester.
