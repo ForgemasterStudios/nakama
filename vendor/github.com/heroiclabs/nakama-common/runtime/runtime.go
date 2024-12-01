@@ -859,13 +859,13 @@ type Initializer interface {
 	RegisterAfterGetUsers(fn func(ctx context.Context, logger Logger, db *sql.DB, nk NakamaModule, out *api.Users, in *api.GetUsersRequest) error) error
 
 	// RegisterEvent can be used to define a function handler that triggers when custom events are received or generated.
-	RegisterEvent(fn func(ctx context.Context, logger Logger, evt *api.Event)) error
+	RegisterEvent(fn func(ctx context.Context, logger Logger, nk NakamaModule, evt *api.Event)) error
 
 	// RegisterEventSessionStart can be used to define functions triggered when client sessions start.
-	RegisterEventSessionStart(fn func(ctx context.Context, logger Logger, evt *api.Event)) error
+	RegisterEventSessionStart(fn func(ctx context.Context, logger Logger, nk NakamaModule, evt *api.Event)) error
 
 	// RegisterEventSessionEnd can be used to define functions triggered when client sessions end.
-	RegisterEventSessionEnd(fn func(ctx context.Context, logger Logger, evt *api.Event)) error
+	RegisterEventSessionEnd(fn func(ctx context.Context, logger Logger, nk NakamaModule, evt *api.Event)) error
 
 	// RegisterStorageIndex creates a new storage index definition and triggers an indexing process if needed.
 	RegisterStorageIndex(name, collection, key string, fields []string, sortableFields []string, maxEntries int, indexOnly bool) error

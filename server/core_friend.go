@@ -521,7 +521,7 @@ func AddFriends(ctx context.Context, logger *zap.Logger, db *sql.DB, tracker Tra
 			Content:    string(content),
 			SenderId:   userID.String(),
 			Code:       code,
-			Persistent: true,
+			Persistent: false,
 			CreateTime: &timestamppb.Timestamp{Seconds: time.Now().UTC().Unix()},
 		}}
 	}

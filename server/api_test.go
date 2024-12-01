@@ -33,6 +33,7 @@ import (
 	"github.com/heroiclabs/nakama-common/rtapi"
 	"github.com/heroiclabs/nakama-common/runtime"
 	"github.com/heroiclabs/nakama/v3/apigrpc"
+	"github.com/heroiclabs/nakama/v3/protojsonaes"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -45,13 +46,21 @@ import (
 var (
 	logger             = NewConsoleLogger(os.Stdout, true)
 	cfg                = NewConfig(logger)
-	protojsonMarshaler = &protojson.MarshalOptions{
-		UseProtoNames:   true,
-		UseEnumNumbers:  true,
-		EmitUnpopulated: false,
+	protojsonMarshaler = &protojsonaes.MarshalOptions{
+		UseAESEncryption: cfg.Session.UseAESMessageEncryption,
+		AESEncryptionKey: []byte(cfg.Session.AESMessageEncryptionKey),
+		MarshalOptions: &protojson.MarshalOptions{
+			UseProtoNames:   true,
+			UseEnumNumbers:  true,
+			EmitUnpopulated: false,
+		},
 	}
-	protojsonUnmarshaler = &protojson.UnmarshalOptions{
-		DiscardUnknown: false,
+	protojsonUnmarshaler = &protojsonaes.UnmarshalOptions{
+		UseAESEncryption: cfg.Session.UseAESMessageEncryption,
+		AESEncryptionKey: []byte(cfg.Session.AESMessageEncryptionKey),
+		UnmarshalOptions: &protojson.UnmarshalOptions{
+			DiscardUnknown: false,
+		},
 	}
 	metrics       = NewLocalMetrics(logger, logger, nil, cfg)
 	storageIdx, _ = NewLocalStorageIndex(logger, nil, &StorageConfig{DisableIndexOnly: false}, metrics)

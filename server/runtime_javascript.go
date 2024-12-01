@@ -33,6 +33,7 @@ import (
 	"github.com/gofrs/uuid/v5"
 	"github.com/heroiclabs/nakama-common/api"
 	"github.com/heroiclabs/nakama-common/rtapi"
+	"github.com/heroiclabs/nakama/v3/protojsonaes"
 	"github.com/heroiclabs/nakama/v3/social"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
@@ -150,8 +151,8 @@ func (mc *RuntimeJSModuleCache) Add(m *RuntimeJSModule) {
 type RuntimeProviderJS struct {
 	logger               *zap.Logger
 	db                   *sql.DB
-	protojsonMarshaler   *protojson.MarshalOptions
-	protojsonUnmarshaler *protojson.UnmarshalOptions
+	protojsonMarshaler   *protojsonaes.MarshalOptions
+	protojsonUnmarshaler *protojsonaes.UnmarshalOptions
 	config               Config
 	version              string
 	socialClient         *social.Client
@@ -643,7 +644,7 @@ func (rp *RuntimeProviderJS) Put(r *RuntimeJS) {
 	}
 }
 
-func NewRuntimeProviderJS(ctx context.Context, logger, startupLogger *zap.Logger, db *sql.DB, protojsonMarshaler *protojson.MarshalOptions, protojsonUnmarshaler *protojson.UnmarshalOptions, config Config, version string, socialClient *social.Client, leaderboardCache LeaderboardCache, leaderboardRankCache LeaderboardRankCache, leaderboardScheduler LeaderboardScheduler, sessionRegistry SessionRegistry, sessionCache SessionCache, statusRegistry StatusRegistry, matchRegistry MatchRegistry, tracker Tracker, metrics Metrics, streamManager StreamManager, router MessageRouter, eventFn RuntimeEventCustomFunction, path, entrypoint string, matchProvider *MatchProvider, storageIndex StorageIndex) ([]string, map[string]RuntimeRpcFunction, map[string]RuntimeBeforeRtFunction, map[string]RuntimeAfterRtFunction, *RuntimeBeforeReqFunctions, *RuntimeAfterReqFunctions, RuntimeMatchmakerMatchedFunction, RuntimeTournamentEndFunction, RuntimeTournamentResetFunction, RuntimeLeaderboardResetFunction, RuntimeShutdownFunction, RuntimePurchaseNotificationAppleFunction, RuntimeSubscriptionNotificationAppleFunction, RuntimePurchaseNotificationGoogleFunction, RuntimeSubscriptionNotificationGoogleFunction, map[string]RuntimeStorageIndexFilterFunction, error) {
+func NewRuntimeProviderJS(ctx context.Context, logger, startupLogger *zap.Logger, db *sql.DB, protojsonMarshaler *protojsonaes.MarshalOptions, protojsonUnmarshaler *protojsonaes.UnmarshalOptions, config Config, version string, socialClient *social.Client, leaderboardCache LeaderboardCache, leaderboardRankCache LeaderboardRankCache, leaderboardScheduler LeaderboardScheduler, sessionRegistry SessionRegistry, sessionCache SessionCache, statusRegistry StatusRegistry, matchRegistry MatchRegistry, tracker Tracker, metrics Metrics, streamManager StreamManager, router MessageRouter, eventFn RuntimeEventCustomFunction, path, entrypoint string, matchProvider *MatchProvider, storageIndex StorageIndex) ([]string, map[string]RuntimeRpcFunction, map[string]RuntimeBeforeRtFunction, map[string]RuntimeAfterRtFunction, *RuntimeBeforeReqFunctions, *RuntimeAfterReqFunctions, RuntimeMatchmakerMatchedFunction, RuntimeTournamentEndFunction, RuntimeTournamentResetFunction, RuntimeLeaderboardResetFunction, RuntimeShutdownFunction, RuntimePurchaseNotificationAppleFunction, RuntimeSubscriptionNotificationAppleFunction, RuntimePurchaseNotificationGoogleFunction, RuntimeSubscriptionNotificationGoogleFunction, map[string]RuntimeStorageIndexFilterFunction, error) {
 	startupLogger.Info("Initialising JavaScript runtime provider", zap.String("path", path), zap.String("entrypoint", entrypoint))
 
 	modCache, err := cacheJavascriptModules(startupLogger, path, entrypoint)
@@ -651,11 +652,15 @@ func NewRuntimeProviderJS(ctx context.Context, logger, startupLogger *zap.Logger
 		startupLogger.Fatal("Failed to load JavaScript files", zap.Error(err))
 	}
 
-	jsprotojsonMarshaler := &protojson.MarshalOptions{
-		UseProtoNames:   false,
-		UseEnumNumbers:  protojsonMarshaler.UseEnumNumbers,
-		EmitUnpopulated: protojsonMarshaler.EmitUnpopulated,
-		Indent:          protojsonMarshaler.Indent,
+	jsprotojsonMarshaler := &protojsonaes.MarshalOptions{
+		UseAESEncryption: protojsonMarshaler.UseAESEncryption,
+		AESEncryptionKey: protojsonMarshaler.AESEncryptionKey,
+		MarshalOptions: &protojson.MarshalOptions{
+			UseProtoNames:   false,
+			UseEnumNumbers:  protojsonMarshaler.MarshalOptions.UseEnumNumbers,
+			EmitUnpopulated: protojsonMarshaler.MarshalOptions.EmitUnpopulated,
+			Indent:          protojsonMarshaler.MarshalOptions.Indent,
+		},
 	}
 
 	localCache := NewRuntimeJavascriptLocalCache(ctx)

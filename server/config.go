@@ -18,17 +18,18 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"net/url"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+
 	"github.com/heroiclabs/nakama-common/runtime"
 	"github.com/heroiclabs/nakama/v3/flags"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"gopkg.in/yaml.v3"
-	"net/url"
-	"os"
-	"path/filepath"
-	"sort"
-	"strings"
 )
 
 // Config interface is the Nakama core configuration.
@@ -738,14 +739,16 @@ var _ runtime.SessionConfig = &SessionConfig{}
 
 // SessionConfig is configuration relevant to the session.
 type SessionConfig struct {
-	EncryptionKey         string `yaml:"encryption_key" json:"encryption_key" usage:"The encryption key used to produce the client token."`
-	TokenExpirySec        int64  `yaml:"token_expiry_sec" json:"token_expiry_sec" usage:"Token expiry in seconds."`
-	RefreshEncryptionKey  string `yaml:"refresh_encryption_key" json:"refresh_encryption_key" usage:"The encryption key used to produce the client refresh token."`
-	RefreshTokenExpirySec int64  `yaml:"refresh_token_expiry_sec" json:"refresh_token_expiry_sec" usage:"Refresh token expiry in seconds."`
-	SingleSocket          bool   `yaml:"single_socket" json:"single_socket" usage:"Only allow one socket per user. Older sessions are disconnected. Default false."`
-	SingleMatch           bool   `yaml:"single_match" json:"single_match" usage:"Only allow one match per user. Older matches receive a leave. Requires single socket to enable. Default false."`
-	SingleParty           bool   `yaml:"single_party" json:"single_party" usage:"Only allow one party per user. Older parties receive a leave. Requires single socket to enable. Default false."`
-	SingleSession         bool   `yaml:"single_session" json:"single_session" usage:"Only allow one session token per user. Older session tokens are invalidated in the session cache. Default false."`
+	EncryptionKey           string `yaml:"encryption_key" json:"encryption_key" usage:"The encryption key used to produce the client token."`
+	TokenExpirySec          int64  `yaml:"token_expiry_sec" json:"token_expiry_sec" usage:"Token expiry in seconds."`
+	RefreshEncryptionKey    string `yaml:"refresh_encryption_key" json:"refresh_encryption_key" usage:"The encryption key used to produce the client refresh token."`
+	RefreshTokenExpirySec   int64  `yaml:"refresh_token_expiry_sec" json:"refresh_token_expiry_sec" usage:"Refresh token expiry in seconds."`
+	UseAESMessageEncryption bool   `yaml:"use_aes_message_encryption" json:"use_aes_message_encryption" usage:"Flag for enabling AES encryption on all client-server communication. Default is false"`
+	AESMessageEncryptionKey string `yaml:"aes_message_encryption_key" json:"aes_message_encryption_key" usage:"The Cipher encryption key for using AES message encryption. Default is '^Y^3Dv%juWW763bw'"`
+	SingleSocket            bool   `yaml:"single_socket" json:"single_socket" usage:"Only allow one socket per user. Older sessions are disconnected. Default false."`
+	SingleMatch             bool   `yaml:"single_match" json:"single_match" usage:"Only allow one match per user. Older matches receive a leave. Requires single socket to enable. Default false."`
+	SingleParty             bool   `yaml:"single_party" json:"single_party" usage:"Only allow one party per user. Older parties receive a leave. Requires single socket to enable. Default false."`
+	SingleSession           bool   `yaml:"single_session" json:"single_session" usage:"Only allow one session token per user. Older session tokens are invalidated in the session cache. Default false."`
 }
 
 func (cfg *SessionConfig) GetEncryptionKey() string {
@@ -791,10 +794,12 @@ func (cfg *SessionConfig) Clone() *SessionConfig {
 
 func NewSessionConfig() *SessionConfig {
 	return &SessionConfig{
-		EncryptionKey:         "defaultencryptionkey",
-		TokenExpirySec:        60,
-		RefreshEncryptionKey:  "defaultrefreshencryptionkey",
-		RefreshTokenExpirySec: 3600,
+		EncryptionKey:           "defaultencryptionkey",
+		TokenExpirySec:          60,
+		RefreshEncryptionKey:    "defaultrefreshencryptionkey",
+		RefreshTokenExpirySec:   3600,
+		UseAESMessageEncryption: false,
+		AESMessageEncryptionKey: "^Y^3Dv%juWW763bw",
 	}
 }
 

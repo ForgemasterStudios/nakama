@@ -5,6 +5,15 @@ The format is based on [keep a changelog](http://keepachangelog.com) and this pr
 
 ## [Unreleased]
 
+## [3.25.1] - 2024-12-01
+### Added
+- AES e2e encryption added. 
+
+### Changed
+- Runtime parameter added to event register functions.
+- AddFriends notification persistence removed.
+- All json responses are encrypted with AES by default.
+
 ## [3.25.0] - 2024-11-25
 ### Added
 - Add new runtime function to get a list of user's friend status.
